@@ -134,10 +134,10 @@ var header_Header = function Header() {
   }), Object(external_preact_["h"])("h1", null, "Preact CLI")), Object(external_preact_["h"])("nav", null, Object(external_preact_["h"])(match["Link"], {
     activeClassName: style.active,
     href: "/"
-  }, "Home"), Object(external_preact_["h"])(match["Link"], {
-    activeClassName: style.active,
-    href: "/models"
   }, "Models"), Object(external_preact_["h"])(match["Link"], {
+    activeClassName: style.active,
+    href: "/home"
+  }, "Home"), Object(external_preact_["h"])(match["Link"], {
     activeClassName: style.active,
     href: "/profile"
   }, "Me"), Object(external_preact_["h"])(match["Link"], {
@@ -531,10 +531,10 @@ var HomePage_HomePage = function HomePage() {
 var app_App = function App() {
   return Object(external_preact_["h"])("div", {
     id: "app"
-  }, Object(external_preact_["h"])(header, null), Object(external_preact_["h"])("main", null, Object(external_preact_["h"])(preact_router_es["Router"], null, Object(external_preact_["h"])(home, {
+  }, Object(external_preact_["h"])(header, null), Object(external_preact_["h"])("main", null, Object(external_preact_["h"])(preact_router_es["Router"], null, Object(external_preact_["h"])(routes_HomePage, {
     path: "/"
-  }), Object(external_preact_["h"])(routes_HomePage, {
-    path: "/models"
+  }), Object(external_preact_["h"])(home, {
+    path: "/home"
   }), Object(external_preact_["h"])(profile, {
     path: "/profile/",
     user: "me"
