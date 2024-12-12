@@ -3,39 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Search and Click</title>
+    <title>Read Config Files</title>
     <style>
         body { font-family: Arial, sans-serif; }
-        .result { margin-top: 20px; }
+        .folder { margin-top: 20px; }
+        .file-content { margin-left: 20px; }
     </style>
 </head>
 <body>
-    <h1>Search and Click Example</h1>
-    <input type="text" id="searchInput" placeholder="Enter search term">
-    <button onclick="searchContent()">Search</button>
-    <div id="results" class="result"></div>
+    <h1>Config Files Content</h1>
+    <div id="content"></div>
 
     <script>
         async function fetchFileContent(owner, repo, path) {
             const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
             const response = await fetch(url);
             const data = await response.json();
-            const content = atob(data.content); // 解码 Base64 内容
-            return content;
+            if (Array.isArray(data)) {
+                // If the path is a directory, recursively fetch files
+                for (const item of data) {
+                    if (item.type === 'file' && item.name === 'config.txt') {
+                        const fileContent = await fetchFileContent(owner, repo, item.path);
+                        displayContent(item.path, fileContent);
+                    } else if (item.type === 'dir') {
+                        await fetchFileContent(owner, repo, item.path);
+                    }
+                }
+            } else {
+                // If the path is a file, return its content
+                return atob(data.content);
+            }
         }
 
-        function searchAndReorganize(content, searchTerm) {
-            const regex = new RegExp(searchTerm, 'gi');
-            const matches = content.match(regex);
-            return matches ? matches.join(', ') : 'No matches found';
+        function displayContent(path, content) {
+            const contentDiv = document.getElementById('content');
+            const folderDiv = document.createElement('div');
+            folderDiv.className = 'folder';
+            folderDiv.innerHTML = `<strong>${path}</strong>`;
+            const fileContentDiv = document.createElement('div');
+            fileContentDiv.className = 'file-content';
+            fileContentDiv.textContent = content;
+            folderDiv.appendChild(fileContentDiv);
+            contentDiv.appendChild(folderDiv);
         }
 
-        async function searchContent() {
-            const searchTerm = document.getElementById('searchInput').value;
-            const content = await fetchFileContent('your-username', 'your-repo', 'path/to/your/file.txt');
-            const result = searchAndReorganize(content, searchTerm);
-            document.getElementById('results').innerText = result;
+        async function loadConfigFiles() {
+            const owner = 'ym-sunyan';
+            const repo = 'test';
+            const path = ''; // Root directory
+            await fetchFileContent(owner, repo, path);
         }
+        loadConfigFiles();
     </script>
 </body>
 </html>
