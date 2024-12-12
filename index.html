@@ -31,7 +31,9 @@
                 }
             } else {
                 // If the path is a file, return its content
-                return atob(data.content);
+                const content = atob(data.content);
+                const decoder = new TextDecoder('utf-8');
+                return decoder.decode(new Uint8Array([...content].map(char => char.charCodeAt(0))));
             }
         }
 
@@ -53,6 +55,7 @@
             const path = ''; // Root directory
             await fetchFileContent(owner, repo, path);
         }
+
         loadConfigFiles();
     </script>
 </body>
