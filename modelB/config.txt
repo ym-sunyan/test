@@ -1,1 +1,2 @@
 这是模型B的配置参数
+this is test
