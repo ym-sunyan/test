@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Search and Click</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Search and Click Example</h1>
+    <input type="text" id="searchInput" placeholder="Enter search term">
+    <button onclick="searchContent()">Search</button>
+    <div id="results" class="result"></div>
+
+    <script>
+        async function fetchFileContent(owner, repo, path) {
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const content = atob(data.content); // 解码 Base64 内容
+            return content;
+        }
+
+        function searchAndReorganize(content, searchTerm) {
+            const regex = new RegExp(searchTerm, 'gi');
+            const matches = content.match(regex);
+            return matches ? matches.join(', ') : 'No matches found';
+        }
+
+        async function searchContent() {
+            const searchTerm = document.getElementById('searchInput').value;
+            const content = await fetchFileContent('your-username', 'your-repo', 'path/to/your/file.txt');
+            const result = searchAndReorganize(content, searchTerm);
+            document.getElementById('results').innerText = result;
+        }
+    </script>
+</body>
+</html>
