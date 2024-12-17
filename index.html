@@ -42,11 +42,13 @@
         // 读取 localStorage 中的 data.json 数据
         function readDataJson() {
             const data = localStorage.getItem('data.json');
+            console.log('Read data.json:', data);
             return data ? JSON.parse(data) : {};
         }
 
         // 写入 data.json 数据到 localStorage
         function writeDataJson(data) {
+            console.log('Write data.json:', data);
             localStorage.setItem('data.json', JSON.stringify(data));
         }
 
@@ -104,6 +106,7 @@
 
         // 用于在页面上显示文件内容和上传时间。
         function displayContent(path, content, uploadTime) {
+            console.log('Display content:', { path, content, uploadTime });
             const contentDiv = document.getElementById('content');
             const folderDiv = document.createElement('div');
             folderDiv.className = 'folder';
