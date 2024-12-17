@@ -5,9 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Read Config Files</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .folder { margin-top: 20px; }
-        .file-content { margin-left: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+        }
+        #content {
+            width: 80%;
+            max-width: 800px;
+        }
+        .folder {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .file-content {
+            margin-left: 20px;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
     </style>
 </head>
 <body>
@@ -15,33 +39,75 @@
     <div id="content"></div>
 
     <script>
+        // 读取 localStorage 中的 data.json 数据
+        function readDataJson() {
+            const data = localStorage.getItem('data.json');
+            return data ? JSON.parse(data) : {};
+        }
+
+        // 写入 data.json 数据到 localStorage
+        function writeDataJson(data) {
+            localStorage.setItem('data.json', JSON.stringify(data));
+        }
+
+        // 异步函数用于从 GitHub 仓库中获取文件内容
         async function fetchFileContent(owner, repo, path) {
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            if (Array.isArray(data)) {
-                // If the path is a directory, recursively fetch files
-                for (const item of data) {
-                    if (item.type === 'file' && item.name === 'config.txt') {
-                        const fileContent = await fetchFileContent(owner, repo, item.path);
-                        displayContent(item.path, fileContent);
-                    } else if (item.type === 'dir') {
-                        await fetchFileContent(owner, repo, item.path);
-                    }
+            try {
+                const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${path}: ${response.statusText}`);
                 }
-            } else {
-                // If the path is a file, return its content
-                const content = atob(data.content);
-                const decoder = new TextDecoder('utf-8');
-                return decoder.decode(new Uint8Array([...content].map(char => char.charCodeAt(0))));
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    const promises = data.map(async (item) => {
+                        if (item.type === 'file' && item.name === 'config.txt') {
+                            const fileContent = await fetchFileContent(owner, repo, item.path);
+                            const uploadTime = await fetchFileUploadTime(owner, repo, item.path);
+                            displayContent(item.path, fileContent, uploadTime);
+                        } else if (item.type === 'dir') {
+                            await fetchFileContent(owner, repo, item.path);
+                        }
+                    });
+                    await Promise.all(promises);
+                } else {
+                    if (!data.content) {
+                        throw new Error(`No content found at ${path}`);
+                    }
+                    const content = atob(data.content);
+                    const decoder = new TextDecoder('utf-8');
+                    return decoder.decode(new Uint8Array([...content].map(char => char.charCodeAt(0))));
+                }
+            } catch (error) {
+                console.error(`Error fetching file content: ${error.message}`);
             }
         }
 
-        function displayContent(path, content) {
+        // 异步函数用于获取文件的上传时间
+        async function fetchFileUploadTime(owner, repo, path) {
+            try {
+                const url = `https://api.github.com/repos/${owner}/${repo}/commits?path=${path}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch commit info for ${path}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.length > 0) {
+                    return data[0].commit.committer.date;
+                } else {
+                    throw new Error(`No commit info found for ${path}`);
+                }
+            } catch (error) {
+                console.error(`Error fetching file upload time: ${error.message}`);
+            }
+        }
+
+        // 用于在页面上显示文件内容和上传时间。
+        function displayContent(path, content, uploadTime) {
             const contentDiv = document.getElementById('content');
             const folderDiv = document.createElement('div');
             folderDiv.className = 'folder';
-            folderDiv.innerHTML = `<strong>${path}</strong>`;
+            folderDiv.innerHTML = `<strong>${path}</strong> (Uploaded on: ${new Date(uploadTime).toLocaleString()})`;
             const fileContentDiv = document.createElement('div');
             fileContentDiv.className = 'file-content';
             fileContentDiv.textContent = content;
@@ -49,11 +115,29 @@
             contentDiv.appendChild(folderDiv);
         }
 
+        // 用于初始化加载配置文件
         async function loadConfigFiles() {
             const owner = 'ym-sunyan';
             const repo = 'test';
             const path = ''; // Root directory
-            await fetchFileContent(owner, repo, path);
+
+            const data = readDataJson();
+
+            const promises = Object.keys(data).map(async (key) => {
+                const item = data[key];
+                const uploadTime = await fetchFileUploadTime(owner, repo, item.path);
+                if (new Date(uploadTime) > new Date(item.uploadTime)) {
+                    const fileContent = await fetchFileContent(owner, repo, item.path);
+                    item.content = fileContent;
+                    item.uploadTime = uploadTime;
+                    displayContent(item.path, fileContent, uploadTime);
+                } else {
+                    displayContent(item.path, item.content, item.uploadTime);
+                }
+            });
+
+            await Promise.all(promises);
+            writeDataJson(data);
         }
 
         loadConfigFiles();
