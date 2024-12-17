@@ -39,30 +39,13 @@
     <div id="content"></div>
 
     <script>
-        // 读取 data.json 文件
-        async function readDataJson() {
-            const response = await fetch('http://localhost:3000/data');
-            if (!response.ok) {
-                throw new Error('Failed to fetch data.json');
-            }
-            return await response.json();
-        }
-
-        // 写入 data.json 文件
-        async function writeDataJson(data) {
-            const response = await fetch('http://localhost:3000/data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            if (!response.ok) {
-                throw new Error('Failed to write data.json');
-            }
-        }
-
         // 异步函数用于从 GitHub 仓库中获取文件内容
+        // owner：GitHub 仓库的所有者用户名。
+        // repo：GitHub 仓库的名称。
+        // path：文件或目录的路径。
+        // url：构建 GitHub API 请求的 URL。
+        // response：通过 fetch API 获取的响应。
+        // data：解析响应的 JSON 数据。
         async function fetchFileContent(owner, repo, path) {
             try {
                 const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
@@ -115,6 +98,10 @@
         }
 
         // 用于在页面上显示文件内容和上传时间。
+        // contentDiv：页面上用于显示内容的主容器。
+        // folderDiv：用于显示文件路径的容器。
+        // fileContentDiv：用于显示文件内容的容器。
+        // 将 folderDiv 和 fileContentDiv 添加到 contentDiv 中。
         function displayContent(path, content, uploadTime) {
             const contentDiv = document.getElementById('content');
             const folderDiv = document.createElement('div');
@@ -128,28 +115,14 @@
         }
 
         // 用于初始化加载配置文件
+        // owner 和 repo：指定 GitHub 仓库的所有者和名称。
+        // path：根目录路径。
+        // 调用 fetchFileContent 函数开始递归获取文件内容。
         async function loadConfigFiles() {
             const owner = 'ym-sunyan';
             const repo = 'test';
             const path = ''; // Root directory
-
-            const data = await readDataJson();
-
-            const promises = Object.keys(data).map(async (key) => {
-                const item = data[key];
-                const uploadTime = await fetchFileUploadTime(owner, repo, item.path);
-                if (new Date(uploadTime) > new Date(item.uploadTime)) {
-                    const fileContent = await fetchFileContent(owner, repo, item.path);
-                    item.content = fileContent;
-                    item.uploadTime = uploadTime;
-                    displayContent(item.path, fileContent, uploadTime);
-                } else {
-                    displayContent(item.path, item.content, item.uploadTime);
-                }
-            });
-
-            await Promise.all(promises);
-            await writeDataJson(data);
+            await fetchFileContent(owner, repo, path);
         }
 
         loadConfigFiles();
