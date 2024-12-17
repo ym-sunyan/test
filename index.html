@@ -39,17 +39,27 @@
     <div id="content"></div>
 
     <script>
-        // 读取 localStorage 中的 data.json 数据
-        function readDataJson() {
-            const data = localStorage.getItem('data.json');
-            console.log('Read data.json:', data);
-            return data ? JSON.parse(data) : {};
+        // 读取 data.json 文件
+        async function readDataJson() {
+            const response = await fetch('http://localhost:3000/data');
+            if (!response.ok) {
+                throw new Error('Failed to fetch data.json');
+            }
+            return await response.json();
         }
 
-        // 写入 data.json 数据到 localStorage
-        function writeDataJson(data) {
-            console.log('Write data.json:', data);
-            localStorage.setItem('data.json', JSON.stringify(data));
+        // 写入 data.json 文件
+        async function writeDataJson(data) {
+            const response = await fetch('http://localhost:3000/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to write data.json');
+            }
         }
 
         // 异步函数用于从 GitHub 仓库中获取文件内容
@@ -106,7 +116,6 @@
 
         // 用于在页面上显示文件内容和上传时间。
         function displayContent(path, content, uploadTime) {
-            console.log('Display content:', { path, content, uploadTime });
             const contentDiv = document.getElementById('content');
             const folderDiv = document.createElement('div');
             folderDiv.className = 'folder';
@@ -124,7 +133,7 @@
             const repo = 'test';
             const path = ''; // Root directory
 
-            const data = readDataJson();
+            const data = await readDataJson();
 
             const promises = Object.keys(data).map(async (key) => {
                 const item = data[key];
@@ -140,7 +149,7 @@
             });
 
             await Promise.all(promises);
-            writeDataJson(data);
+            await writeDataJson(data);
         }
 
         loadConfigFiles();
