@@ -6,7 +6,7 @@ on:
       - main
   schedule:
     - cron: '0 * * * *'  # 每小时运行一次
-
+  workflow_dispatch:  # 手动触发
 jobs:
   update-data:
     runs-on: ubuntu-latest
